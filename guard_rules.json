@@ -1,0 +1,126 @@
+{
+  "_help": "Edit this file to control what is blocked, fixed or flagged. Patterns are case-insensitive. severity: block = redo then fall back, fix = append text, warn = log only. No code change needed.",
+
+  "messages": {
+    "fallback": "I'm sorry, I can't give a reliable answer to that here. Please contact NutraAI support or ask a doctor or pharmacist.",
+    "emergency": "This could be urgent. Please contact a doctor or local emergency services right away (in India, call 112). I can't help with this through product suggestions.",
+    "refuse_out_of_scope": "I can only help with NutraAI products and general wellness information. Is there something about our products I can help with?",
+    "refuse_injection": "I can't help with that request. I can answer questions about NutraAI products and general wellness."
+  },
+
+  "input_rules": [
+    {
+      "id": "emergency",
+      "type": "contains_any",
+      "action": "emergency",
+      "patterns": ["chest pain", "can't breathe", "cannot breathe", "difficulty breathing", "overdose",
+                   "suicide", "kill myself", "severe allergic", "swollen throat", "unconscious",
+                   "seizure", "heavy bleeding"]
+    },
+    {
+      "id": "prompt_injection",
+      "type": "regex",
+      "action": "refuse_injection",
+      "patterns": ["ignore (all |any )?(previous|above|prior) (instructions|rules)",
+                   "(reveal|show|print).{0,30}(system|hidden) (prompt|instructions)",
+                   "you are now", "developer mode", "jailbreak"]
+    },
+    {
+      "id": "out_of_scope",
+      "type": "contains_any",
+      "action": "refuse_out_of_scope",
+      "patterns": ["stock price", "write code", "python script", "politics", "election", "lottery",
+                   "cryptocurrency", "weather"]
+    }
+  ],
+
+  "output_rules": [
+    {
+      "id": "banned_claims",
+      "type": "contains_any",
+      "severity": "block",
+      "ignore_negated": true,
+      "message": "Do not claim cures, guarantees, miracle effects or 'no side effects'.",
+      "patterns": ["cure", "cures", "cured", "guaranteed", "guarantee", "miracle", "100% safe",
+                   "risk-free", "no side effects", "detox", "treats diabetes", "prevents cancer"]
+    },
+    {
+      "id": "diagnosis",
+      "type": "regex",
+      "severity": "block",
+      "message": "Do not diagnose the customer.",
+      "patterns": ["\\byou (definitely |probably |likely )?(have|suffer from|are suffering from) (a |an )?(deficiency|diabetes|thyroid|anemia|anaemia|hypertension|depression|disease)",
+                   "\\byour (symptoms|condition) (is|are) (caused by|due to)"]
+    },
+    {
+      "id": "medicine_instructions",
+      "type": "contains_any",
+      "severity": "block",
+      "ignore_negated": true,
+      "message": "Never tell the customer to stop, skip, replace or change a medicine or dose.",
+      "patterns": ["stop taking your", "stop your medication", "skip your medicine", "instead of your medicine",
+                   "replace your medication", "double the dose", "increase your dose"]
+    },
+    {
+      "id": "numbers_must_come_from_context",
+      "type": "numbers_in_context",
+      "severity": "block",
+      "message": "Every price, dose or quantity must appear exactly in the provided context.",
+      "units": ["mg", "mcg", "µg", "iu", "g", "ml", "%", "capsule", "capsules", "tablet", "tablets",
+                "softgel", "softgels", "inr", "rs", "rupees"]
+    },
+    {
+      "id": "unlisted_product",
+      "type": "unlisted_product",
+      "severity": "block",
+      "message": "Only mention products that appear in the provided context.",
+      "known_products": ["Vitamin D3", "Vitamin B12", "Magnesium Glycinate", "Omega-3", "Ashwagandha",
+                         "Multivitamin", "Zinc", "Vitamin C", "Whey Protein"]
+    },
+    {
+      "id": "no_context_must_decline",
+      "type": "no_context_must_decline",
+      "severity": "block",
+      "message": "No information was found, so say you don't have verified information.",
+      "decline_phrases": ["don't have verified information", "do not have verified information",
+                          "contact nutraai support", "contact our support"]
+    },
+    {
+      "id": "leaked_instructions",
+      "type": "contains_any",
+      "severity": "block",
+      "message": "Do not mention system instructions or the context block.",
+      "patterns": ["system prompt", "my instructions", "<context>", "the context block"]
+    },
+    {
+      "id": "personal_data",
+      "type": "regex",
+      "severity": "block",
+      "message": "Do not output phone numbers or email addresses.",
+      "patterns": ["\\b\\d{10}\\b", "[\\w.+-]+@[\\w-]+\\.[\\w.]+"]
+    },
+    {
+      "id": "doctor_reminder",
+      "type": "requires_when",
+      "severity": "fix",
+      "when_any": ["pregnan", "breastfeed", "nursing", "blood thinner", "warfarin", "kidney", "liver",
+                   "thyroid", "diabetes", "medication", "medicine", "child", "allerg"],
+      "must_contain_any": ["doctor", "pharmacist", "healthcare professional"],
+      "append": "Please check with your doctor or pharmacist before starting any supplement."
+    },
+    {
+      "id": "too_short",
+      "type": "min_chars",
+      "severity": "block",
+      "value": 15,
+      "message": "The answer is empty or too short."
+    },
+    {
+      "id": "too_long",
+      "type": "max_chars",
+      "severity": "warn",
+      "value": 1200,
+      "message": "The answer is longer than intended."
+    }
+  ]
+}
